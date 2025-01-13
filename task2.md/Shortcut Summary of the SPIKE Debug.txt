@@ -1,0 +1,21 @@
+Shortcut Summary of the SPIKE Debugging Output:
+Program Summary:
+
+The program calculates the sum of numbers from 1 to 100 and prints the result: 5050.
+Key Instructions in Debugging Mode:
+
+LUI (Load Upper Immediate): Loads constants into registers.
+lui a2, 0x1: Loads 0x1 into the upper part of register a2.
+lui a0, 0x21: Loads 0x21 into the upper part of register a0.
+ADDI (Add Immediate): Adjusts the stack pointer.
+addi sp, sp, -16: Decreases the stack pointer (sp) by 16 bytes to allocate space on the stack.
+Registers:
+
+a2 = 0x0000000000001000 (after lui a2, 0x1)
+a0 = 0x0000000000210000 (after lui a0, 0x21)
+sp changes from 0x7f7e9b50 to 0x7f7e9b40 (after addi sp, sp, -16).
+Simulation Control:
+
+The simulation is stopped manually with the q command after observing the instructions.
+Conclusion:
+The program is initializing register values and adjusting the stack pointer, as shown by the instructions in the SPIKE debugger.
