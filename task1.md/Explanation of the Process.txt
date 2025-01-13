@@ -1,0 +1,19 @@
+Explanation of the Process in the Uploaded Screenshots:
+: Leafpad Editor (sum1ton.c):
+
+A simple C program is written to compute the sum of numbers from 1 to a given value n (in this case, n=5).
+The logic of the program:
+Variables i, sum, and n are declared and initialized.
+A for loop adds numbers from 1 to n (inclusive) to the sum.
+The result is printed using the printf function.
+The program returns 0 to indicate successful execution.
+
+: Terminal Compilation and Execution:
+Compilation:
+The program is successfully compiled using the gcc compiler.
+Execution:
+The compiled output file is executed using ./a.out.
+The output shows: sum of numbers from 1 to 5 is 15, which is the correct result for the sum of integers from 1 to 5.
+Conclusion:
+The C program correctly computes the sum of numbers from 1 to 5.
+The initial error was due to a missing file or wrong directory, which was fixed, and the program was compiled and executed successfully.
