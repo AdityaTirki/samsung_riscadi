@@ -1,0 +1,92 @@
+15 Unique RISC-V Instructions and their 32- Bit encodings:
+RISC-V instructions and their Encodings:
+
+add a0, a0, a1
+
+Type: R-type
+
+Binary Encoding: 0000000 00101 00100 000 00100 0110011
+
+li a0, 0x0
+
+Type:Pseudo -> I-type
+
+Binary Encoding:0000000 00000 00000 000 00100 0010011
+
+lui a5, 0xfffff
+
+Type:U-type
+
+Binary Encoding:1111111 111111 11111 00000 10101 0110111
+
+jal ra, 0x44
+
+Type:J-type
+
+Binary Encoding:0000000 00100 00100 00000 00001 1101111
+
+add sp, sp, 16
+
+Type:I-type
+
+Binary Encoding:0000000 10000 00010 000 00010 0010011
+
+sub a2, a0, a2
+
+Type:R-type
+
+Binary Encoding:0100000 00010 00100 000 00101 0110011
+
+lbu a5, 0x1944
+
+Type:I-type
+
+Binary Encoding:0000000 10000 01000 100 00101 0000011
+
+bnez a5,
+
+Type:B-type
+
+Binary Encoding:0000000 10001 01000 001 01000 1100011
+
+ret
+
+Type:I-type (JALR x0)`
+
+Binary Encoding:0000000 00000 00100 000 00000 1100111
+
+auipc a0, 272
+
+Type:U-type
+
+Binary Encoding:0000000 01111 11111 000 00000 0010111
+
+jalr ra,
+
+Type:I-type
+
+Binary Encoding:0001 0000 0000 00001 000 00001 1100111
+
+auipc gp, 0x13
+
+Type:U-type
+
+Binary Encoding:0000000 00001 00110 000 00110 0010111
+
+addi gp, gp, 1780
+
+Type:I-type
+
+Binary Encoding:0000000 01101 00110 000 00110 0010011
+
+jal ra,
+
+Type:J-type
+
+Binary Encoding:0000000 00010 01100 00000 00001 1101111
+
+lw a0, 0(sp)
+
+Type:I-type
+
+Binary Encoding:0000000 00000 00010 010 00100 0000011
