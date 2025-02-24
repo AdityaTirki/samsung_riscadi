@@ -1,0 +1,78 @@
+Overview:
+The Solar Tracking System will now use two Light Dependent Resistors (LDRs) to detect sunlight intensity and a servo motor to adjust the solar panel's position, with a VSD controlling the system. The LDRs will sense the light intensity on both sides of the solar panel, and the servo motor will rotate the panel accordingly using signals from the VSD.
+Components Required:
+2x LDR Sensors
+1x Servo Motor
+VSD (instead of Arduino)
+Resistors (for LDR voltage dividers)
+Power Supply
+Breadboard and Jumper Wires
+Circuit and Working:
+The LDR sensors will be connected to the analog inputs of the VSD.
+The servo motor will be controlled through the VSD's output signals, rotating the solar panel based on the LDR readings
+CODE:
+#include <vsd.h>  // Include the VSD-specific header
+
+#define LIGHT_THRESHOLD 500  // Adjust this value based on your LDR sensor
+#define SERVO_PIN 9          // Servo motor control pin
+
+void GPIO_Config(void) {
+    VSD_GPIO_InitTypeDef GPIO_InitStructure = {0};
+    VSD_APB2PeriphClockCmd(VSD_APB2Periph_GPIOA, ENABLE);
+    GPIO_InitStructure.GPIO_Pin = SERVO_PIN;
+    GPIO_InitStructure.GPIO_Mode = VSD_GPIO_Mode_Out_PP;
+    GPIO_InitStructure.GPIO_Speed = VSD_GPIO_Speed_50MHz;
+    VSD_GPIO_Init(GPIOA, &GPIO_InitStructure);
+}
+
+void ADC_Config(void) {
+    VSD_ADC_InitTypeDef ADC_InitStructure = {0};
+    VSD_APB2PeriphClockCmd(VSD_APB2Periph_ADC1, ENABLE);
+    ADC_InitStructure.ADC_Mode = VSD_ADC_Mode_Independent;
+    ADC_InitStructure.ADC_ScanConvMode = DISABLE;
+    ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
+    ADC_InitStructure.ADC_DataAlign = VSD_ADC_DataAlign_Right;
+    ADC_InitStructure.ADC_NbrOfChannel = 2;  // Two channels for two LDRs
+    VSD_ADC_Init(ADC1, &ADC_InitStructure);
+    VSD_ADC_RegularChannelConfig(ADC1, VSD_ADC_Channel_0, 1, VSD_ADC_SampleTime_55Cycles5);  // Left LDR
+    VSD_ADC_RegularChannelConfig(ADC1, VSD_ADC_Channel_1, 2, VSD_ADC_SampleTime_55Cycles5);  // Right LDR
+    VSD_ADC_Cmd(ADC1, ENABLE);
+    VSD_ADC_ResetCalibration(ADC1);
+    while (VSD_ADC_GetResetCalibrationStatus(ADC1));
+    VSD_ADC_StartCalibration(ADC1);
+    while (VSD_ADC_GetCalibrationStatus(ADC1));
+    VSD_ADC_SoftwareStartConvCmd(ADC1, ENABLE);
+}
+
+int main(void) {
+    uint16_t lightLeft = 0, lightRight = 0;
+    uint16_t currentAngle = 90;  // Start at neutral position (90 degrees)
+
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
+    SystemCoreClockUpdate();
+    Delay_Init();
+    GPIO_Config();
+    ADC_Config();
+
+    while (1) {
+        lightLeft = VSD_ADC_GetConversionValue(ADC1);  // Read Left LDR
+        lightRight = VSD_ADC_GetConversionValue(ADC1); // Read Right LDR
+
+        // Compare light levels and adjust servo angle
+        if (abs(lightLeft - lightRight) > LIGHT_THRESHOLD) {
+            if (lightLeft > lightRight && currentAngle > 0) {
+                currentAngle -= 1;  // Move servo left
+            } else if (lightRight > lightLeft && currentAngle < 180) {
+                currentAngle += 1;  // Move servo right
+            }
+            VSD_GPIO_WriteBit(GPIOA, SERVO_PIN, currentAngle);  // Adjust the servo position
+        }
+
+        Delay_Ms(100);  // Small delay for smooth operation
+    }
+}
+
+void NMI_Handler(void) {}
+void HardFault_Handler(void) {
+    while (1) {}
+}
