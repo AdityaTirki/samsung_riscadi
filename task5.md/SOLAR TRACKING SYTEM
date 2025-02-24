@@ -11,63 +11,72 @@ Circuit and Working:
 The LDR sensors will be connected to the analog inputs of the VSD.
 The servo motor will be controlled through the VSD's output signals, rotating the solar panel based on the LDR readings
 CODE:
-#include <vsd.h>  // Include the VSD-specific header
+#include <soc.h>  // SoC specific header for RISC-V and GPIO configuration
 
-#define LIGHT_THRESHOLD 500  // Adjust this value based on your LDR sensor
-#define SERVO_PIN 9          // Servo motor control pin
+#define LIGHT_THRESHOLD 500  // Light difference threshold
+#define SERVO_PIN gpio0      // GPIO pin connected to servo motor
 
 void GPIO_Config(void) {
-    VSD_GPIO_InitTypeDef GPIO_InitStructure = {0};
-    VSD_APB2PeriphClockCmd(VSD_APB2Periph_GPIOA, ENABLE);
+    SoC_GPIO_InitTypeDef GPIO_InitStructure = {0};
+    
+    // Enable clock for GPIO and configure the servo pin as output
+    SoC_APB2PeriphClockCmd(SoC_APB2Periph_GPIOA, ENABLE);
     GPIO_InitStructure.GPIO_Pin = SERVO_PIN;
-    GPIO_InitStructure.GPIO_Mode = VSD_GPIO_Mode_Out_PP;
-    GPIO_InitStructure.GPIO_Speed = VSD_GPIO_Speed_50MHz;
-    VSD_GPIO_Init(GPIOA, &GPIO_InitStructure);
+    GPIO_InitStructure.GPIO_Mode = SoC_GPIO_Mode_Out_PP;
+    GPIO_InitStructure.GPIO_Speed = SoC_GPIO_Speed_50MHz;
+    SoC_GPIO_Init(GPIOA, &GPIO_InitStructure);
 }
 
 void ADC_Config(void) {
-    VSD_ADC_InitTypeDef ADC_InitStructure = {0};
-    VSD_APB2PeriphClockCmd(VSD_APB2Periph_ADC1, ENABLE);
-    ADC_InitStructure.ADC_Mode = VSD_ADC_Mode_Independent;
+    SoC_ADC_InitTypeDef ADC_InitStructure = {0};
+    
+    // Enable clock for ADC and configure the LDR channels
+    SoC_APB2PeriphClockCmd(SoC_APB2Periph_ADC1, ENABLE);
+    ADC_InitStructure.ADC_Mode = SoC_ADC_Mode_Independent;
     ADC_InitStructure.ADC_ScanConvMode = DISABLE;
     ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
-    ADC_InitStructure.ADC_DataAlign = VSD_ADC_DataAlign_Right;
-    ADC_InitStructure.ADC_NbrOfChannel = 2;  // Two channels for two LDRs
-    VSD_ADC_Init(ADC1, &ADC_InitStructure);
-    VSD_ADC_RegularChannelConfig(ADC1, VSD_ADC_Channel_0, 1, VSD_ADC_SampleTime_55Cycles5);  // Left LDR
-    VSD_ADC_RegularChannelConfig(ADC1, VSD_ADC_Channel_1, 2, VSD_ADC_SampleTime_55Cycles5);  // Right LDR
-    VSD_ADC_Cmd(ADC1, ENABLE);
-    VSD_ADC_ResetCalibration(ADC1);
-    while (VSD_ADC_GetResetCalibrationStatus(ADC1));
-    VSD_ADC_StartCalibration(ADC1);
-    while (VSD_ADC_GetCalibrationStatus(ADC1));
-    VSD_ADC_SoftwareStartConvCmd(ADC1, ENABLE);
+    ADC_InitStructure.ADC_DataAlign = SoC_ADC_DataAlign_Right;
+    ADC_InitStructure.ADC_NbrOfChannel = 2;  // Two LDR channels
+    SoC_ADC_Init(ADC1, &ADC_InitStructure);
+    
+    // Configure channels for LDRs
+    SoC_ADC_RegularChannelConfig(ADC1, SoC_ADC_Channel_0, 1, SoC_ADC_SampleTime_55Cycles5);  // Left LDR
+    SoC_ADC_RegularChannelConfig(ADC1, SoC_ADC_Channel_1, 2, SoC_ADC_SampleTime_55Cycles5);  // Right LDR
+    
+    // Start ADC
+    SoC_ADC_Cmd(ADC1, ENABLE);
+    SoC_ADC_ResetCalibration(ADC1);
+    while (SoC_ADC_GetResetCalibrationStatus(ADC1));
+    SoC_ADC_StartCalibration(ADC1);
+    while (SoC_ADC_GetCalibrationStatus(ADC1));
+    SoC_ADC_SoftwareStartConvCmd(ADC1, ENABLE);
 }
 
 int main(void) {
     uint16_t lightLeft = 0, lightRight = 0;
-    uint16_t currentAngle = 90;  // Start at neutral position (90 degrees)
-
-    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
-    SystemCoreClockUpdate();
-    Delay_Init();
+    uint16_t currentAngle = 90;  // Neutral starting position for servo motor
+    
+    SystemInit();  // Initialize the SoC system
     GPIO_Config();
     ADC_Config();
-
+    
     while (1) {
-        lightLeft = VSD_ADC_GetConversionValue(ADC1);  // Read Left LDR
-        lightRight = VSD_ADC_GetConversionValue(ADC1); // Read Right LDR
-
+        // Read light intensity from both LDRs
+        lightLeft = SoC_ADC_GetConversionValue(ADC1);  // Left LDR
+        lightRight = SoC_ADC_GetConversionValue(ADC1); // Right LDR
+        
         // Compare light levels and adjust servo angle
         if (abs(lightLeft - lightRight) > LIGHT_THRESHOLD) {
             if (lightLeft > lightRight && currentAngle > 0) {
-                currentAngle -= 1;  // Move servo left
+                currentAngle -= 1;  // Move servo to the left
             } else if (lightRight > lightLeft && currentAngle < 180) {
-                currentAngle += 1;  // Move servo right
+                currentAngle += 1;  // Move servo to the right
             }
-            VSD_GPIO_WriteBit(GPIOA, SERVO_PIN, currentAngle);  // Adjust the servo position
+            
+            // Write angle to the servo pin (PWM control)
+            SoC_GPIO_WriteBit(GPIOA, SERVO_PIN, currentAngle);
         }
-
+        
         Delay_Ms(100);  // Small delay for smooth operation
     }
 }
@@ -76,3 +85,4 @@ void NMI_Handler(void) {}
 void HardFault_Handler(void) {
     while (1) {}
 }
+
